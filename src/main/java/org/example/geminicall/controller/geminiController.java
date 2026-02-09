@@ -2,10 +2,12 @@ package org.example.geminicall.controller;
 
 import org.example.geminicall.model.geminiModel;
 import org.example.geminicall.service.geminiService;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@CrossOrigin(origins = "*")
 @RestController
 public class geminiController {
 

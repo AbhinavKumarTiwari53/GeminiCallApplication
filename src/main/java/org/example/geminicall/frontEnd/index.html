@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gemini Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#0f0f0f] text-gray-200 h-screen flex flex-col">
+
+<!-- HEADER -->
+<header class="border-b border-gray-800 px-6 py-4 text-center font-medium tracking-wide">
+    Gemini Chat
+</header>
+
+<!-- CHAT AREA -->
+<main
+        id="chat"
+        class="flex-1 overflow-y-auto px-6 py-10 space-y-8 max-w-3xl mx-auto w-full"
+></main>
+
+<!-- INPUT -->
+<footer class="border-t border-gray-800 px-6 py-5">
+    <div class="max-w-3xl mx-auto flex gap-3 items-end">
+    <textarea
+            id="prompt"
+            placeholder="Send a message…"
+            rows="1"
+            class="flex-1 resize-none bg-[#1b1b1b] border border-gray-700 rounded-xl px-4 py-3 text-[15px] leading-relaxed
+             focus:outline-none focus:ring-1 focus:ring-gray-500"
+    ></textarea>
+        <button
+                onclick="generateResponse()"
+                class="bg-white text-black px-5 py-3 rounded-xl text-sm font-medium
+             hover:bg-gray-200 transition"
+        >
+            Send
+        </button>
+    </div>
+</footer>
+
+<script>
+    const apiKey = "AIzaSyA1GCGy0WuvL6Xjbbz5jP7mssKrwhqldxE";
+    const chat = document.getElementById("chat");
+
+    function addMessage(text, isUser) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex " + (isUser ? "justify-end" : "justify-start");
+
+      const bubble = document.createElement("div");
+      bubble.className = isUser
+        ? "max-w-[75%] bg-[#1e1e1e] border border-gray-700 rounded-2xl px-5 py-4 text-[15px] leading-relaxed"
+        : "max-w-[75%] bg-[#171717] border border-gray-800 rounded-2xl px-5 py-4 text-[15px] leading-relaxed";
+
+      bubble.textContent = text;
+      wrapper.appendChild(bubble);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function generateResponse() {
+      const input = document.getElementById("prompt");
+      const prompt = input.value.trim();
+      if (!prompt) return;
+
+      input.value = "";
+      addMessage(prompt, true);
+
+      const thinkingWrapper = document.createElement("div");
+      thinkingWrapper.className = "flex justify-start";
+
+      const thinking = document.createElement("div");
+      thinking.className =
+        "max-w-[75%] bg-[#171717] border border-gray-800 rounded-2xl px-5 py-4 text-sm italic text-gray-400";
+      thinking.textContent = "Thinking…";
+
+      thinkingWrapper.appendChild(thinking);
+      chat.appendChild(thinkingWrapper);
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          }
+        );
+
+        const geminiData = await geminiRes.json();
+        const answer =
+          geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "No response";
+
+        chat.removeChild(thinkingWrapper);
+        addMessage(answer, false);
+
+        await fetch("http://localhost:8080/add-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            request: prompt,
+            response: answer,
+          }),
+        });
+
+      } catch (err) {
+        chat.removeChild(thinkingWrapper);
+        addMessage("Something went wrong. Try again.", false);
+        console.error(err);
+      }
+    }
+</script>
+
+</body>
+</html>

@@ -14,6 +14,8 @@ public class geminiService {
     }
 
     public geminiModel addRequest(geminiModel req) {
+        String response = "This is the response from Gemini";
+        req.setResponse(response);
         return repository.save(req);
     }
 }
